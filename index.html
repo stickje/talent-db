@@ -391,6 +391,8 @@ button:hover{border-color:var(--text2);}
         <button class="pill" data-gender="X">X</button>
       </div>
       <div class="filter-sep"></div>
+      <div id="omroep-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      <div class="filter-sep"></div>
       <div id="genre-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     </div>
 
@@ -419,7 +421,7 @@ const igSVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" strok
 const ttSVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>';
 
 let talents=[], genres=[], projecten=[], projectTalents={};
-let activeCat='alle', activeGenres=new Set(), activeGender='alle', searchQ='';
+let activeCat='alle', activeGenres=new Set(), activeGender='alle', activeOmroep='alle', searchQ='';
 let activeProjectId=null, activeId=null, pendingFoto='';
 let selectingMode=false, selectedIds=new Set(), selectingForProject=null;
 let sortMode='recent';
@@ -445,6 +447,7 @@ async function loadGenres(){
   const {data,error}=await db.from('genres').select('*').order('naam');
   genres=error?['Entertainment','Reality','Music','Comedy','Sport','Media','Lifestyle','Info']:(data||[]).map(g=>g.naam);
   renderGenreFilters();
+  renderOmroepFilters();
 }
 
 async function loadProjecten(){
@@ -516,6 +519,7 @@ function renderGrid(){
       &&(activeCat==='alle'||tc.includes(activeCat))
       &&(activeGenres.size===0||[...activeGenres].every(g=>tg.includes(g)))
       &&(activeGender==='alle'||t.gender===activeGender)
+      &&(activeOmroep==='alle'||(t.omroepen&&t.omroepen.includes(activeOmroep)))
       &&(!projIds||projIds.includes(t.id));
   });
   // Sort
@@ -560,6 +564,31 @@ function renderGrid(){
       +socials+omroepTags+'</div></div>';
   }).join('');
 }
+
+function renderOmroepFilters(){
+  var el=document.getElementById('omroep-filters');
+  if(!el) return;
+  el.innerHTML='';
+  var allBtn=document.createElement('button');
+  allBtn.className='pill'+(activeOmroep==='alle'?' active':'');
+  allBtn.textContent='Alle omroepen';
+  allBtn.onclick=function(){setOmroep('alle');};
+  el.appendChild(allBtn);
+  OMROEPEN.forEach(function(o){
+    var btn=document.createElement('button');
+    btn.className='pill'+(activeOmroep===o.id?' active':'');
+    btn.textContent=o.label;
+    if(activeOmroep===o.id){
+      btn.style.background=o.bg;
+      btn.style.color=o.color;
+      btn.style.borderColor=o.border;
+      btn.style.opacity='1';
+    }
+    btn.onclick=function(){setOmroep(o.id);};
+    el.appendChild(btn);
+  });
+}
+function setOmroep(o){activeOmroep=o;renderOmroepFilters();renderGrid();}
 
 function renderGenreFilters(){
   document.getElementById('genre-filters').innerHTML=
@@ -690,15 +719,15 @@ function setGenderButtons(val){
 
 // ── OMROEPEN ─────────────────────────────────────────────────────────
 const OMROEPEN = [
-  {id:'AVROTROS', label:'AVROTROS', bg:'#0a0a4a', color:'#00eaff', border:'#00eaff'},
-  {id:'BNNVARA',  label:'BNNVARA',  bg:'#ffffff', color:'#cc0000', border:'#cc0000'},
-  {id:'EO',       label:'EO',       bg:'#6a0dad', color:'#ffffff', border:'#6a0dad'},
-  {id:'HUMAN',    label:'HUMAN',    bg:'#ff5500', color:'#ff00cc', border:'#ff00cc'},
-  {id:'KRONCRV',  label:'KRO-NCRV', bg:'#5a0080', color:'#ffffff', border:'#5a0080'},
-  {id:'MAX',      label:'Omroep MAX', bg:'#b3d9f5', color:'#00ff88', border:'#00ff88'},
-  {id:'PowNed',   label:'PowNed',   bg:'#ff69b4', color:'#ffffff', border:'#ff69b4'},
-  {id:'VPRO',     label:'VPRO',     bg:'#52BDEC', color:'#ffffff', border:'#52BDEC'},
-  {id:'WNL',      label:'WNL',      bg:'#ff7700', color:'#ffffff', border:'#ff7700'},
+  {id:'AVROTROS', label:'AVROTROS',   bg:'#0a0a4a', color:'#00eaff', border:'#00eaff'},
+  {id:'BNNVARA',  label:'BNNVARA',    bg:'#ffffff', color:'#cc0000', border:'#cc0000'},
+  {id:'EO',       label:'EO',         bg:'#6a0dad', color:'#ffffff', border:'#6a0dad'},
+  {id:'HUMAN',    label:'HUMAN',      bg:'#ff5500', color:'#ff00cc', border:'#ff00cc'},
+  {id:'KRONCRV',  label:'KRO-NCRV',   bg:'#b3d9f5', color:'#00ff88', border:'#00ff88'},
+  {id:'MAX',      label:'Omroep MAX', bg:'#ff7700', color:'#ffffff', border:'#ff7700'},
+  {id:'PowNed',   label:'PowNed',     bg:'#ff69b4', color:'#ffffff', border:'#ff69b4'},
+  {id:'VPRO',     label:'VPRO',       bg:'#52BDEC', color:'#ffffff', border:'#52BDEC'},
+  {id:'WNL',      label:'WNL',        bg:'#ffffff', color:'#ff7700', border:'#ff7700'},
   {id:'NTR',      label:'NTR',      bg:'#00C389', color:'#000000', border:'#00C389'},
 ];
 
@@ -889,6 +918,7 @@ function getVisibleTalents(){
       &&(activeCat==='alle'||tc.includes(activeCat))
       &&(activeGenres.size===0||[...activeGenres].every(g=>tg.includes(g)))
       &&(activeGender==='alle'||t.gender===activeGender)
+      &&(activeOmroep==='alle'||(t.omroepen&&t.omroepen.includes(activeOmroep)))
       &&(!projIds||projIds.includes(t.id));
   });
   if(sortMode==='naam') list.sort((a,b)=>a.naam.localeCompare(b.naam,'nl'));
@@ -1242,6 +1272,11 @@ function toggleMode(){
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
 document.getElementById('search').addEventListener('input',e=>{searchQ=e.target.value;renderGrid();});
+document.getElementById('omroep-filters') && document.getElementById('omroep-filters').addEventListener('click',e=>{
+  const btn=e.target.closest('button'); if(!btn) return;
+  // handled by onclick
+});
+
 document.getElementById('gender-filters').addEventListener('click',e=>{
   const btn=e.target.closest('[data-gender]'); if(!btn) return;
   activeGender=btn.dataset.gender;
