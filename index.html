@@ -735,16 +735,33 @@ function omroepPickerHTML(sel){
   sel=sel||[];
   return '<div class="omroep-picker" id="omroep-picker">'
     +OMROEPEN.map(function(o){
-      var isMax=o.id==='MAX';
-      var lbl=isMax?'Omroep <span style="color:#ff00aa;">&#8212;</span> MAX':o.label;
-      var cls='omroep-btn'+(sel.includes(o.id)?' selected':'');
-      var st='background:'+o.bg+';color:'+o.color+';border-color:'+o.border+';';
-      return '<button type="button" data-oid="'+o.id+'" class="'+cls+'" style="'+st+'" onclick="toggleOmroep(this)">'+lbl+'</button>';
+      var selected=sel.includes(o.id);
+      var st=selected
+        ?'background:'+o.bg+';color:'+o.color+';border-color:'+o.border+';opacity:1;'
+        :'';
+      var cls='omroep-btn'+(selected?' selected':'');
+      return '<button type="button" data-oid="'+o.id+'" class="'+cls+'" style="'+st+'" onclick="toggleOmroep(this)">'+o.label+'</button>';
     }).join('')
     +'</div>';
 }
 
-function toggleOmroep(btn){btn.classList.toggle('selected');}
+function toggleOmroep(btn){
+  btn.classList.toggle('selected');
+  var oid=btn.dataset.oid;
+  var o=OMROEPEN.find(function(x){return x.id===oid;});
+  if(!o) return;
+  if(btn.classList.contains('selected')){
+    btn.style.background=o.bg;
+    btn.style.color=o.color;
+    btn.style.borderColor=o.border;
+    btn.style.opacity='1';
+  } else {
+    btn.style.background='';
+    btn.style.color='';
+    btn.style.borderColor='';
+    btn.style.opacity='';
+  }
+}
 function getSelectedOmroepen(){
   return Array.from(document.querySelectorAll('#omroep-picker button.selected')).map(b=>b.dataset.oid).filter(Boolean);
 }
