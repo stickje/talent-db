@@ -815,6 +815,7 @@ function openModal(mode,id){
       +'</div></div>'
       +'<div id="expertise-wrap-edit">'+expertiseWrapHTML(tCats(t),t.expertise||'')+'</div>'
       +'<div><div class="field-label">Gender</div><div class="picker">'+['Man','Vrouw','X'].map(g=>'<button type="button" class="pick-btn gdr'+(t.gender===g?' selected':'')+'" onclick="toggleGender(this,\''+g+'\')">'+g+'</button>').join('')+'</div></div>'
+      +'<div><div class="field-label">Publieke omroepen</div>'+omroepPickerHTML(t.omroepen||[])+'</div>'
       +socialSection(t.ig_url,t.ig_followers,t.tt_url,t.tt_followers,t.yt_url,t.yt_followers)
       +'<div><div class="field-label">Notities</div><textarea id="m-notes" rows="3">'+(t.notes||'')+'</textarea></div>'
       +'<div class="btn-row"><button class="btn-primary" onclick="updateTalent()">Opslaan</button><button class="btn-danger" onclick="removeTalent()">Verwijderen</button><button onclick="closeModal()">Annuleren</button></div>';
