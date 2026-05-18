@@ -275,6 +275,25 @@ button:hover{border-color:var(--text2);}
 .social-block{flex:1;min-width:160px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:10px;display:flex;flex-direction:column;gap:6px;}
 .social-block-header{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);margin-bottom:2px;}
 
+/* OMROEPEN */
+.omroep-picker{display:flex;flex-wrap:wrap;gap:6px;}
+.omroep-btn{font-size:11px;padding:4px 10px;border-radius:5px;cursor:pointer;font-family:var(--font-body);font-weight:600;letter-spacing:0.3px;border:2px solid transparent;opacity:0.5;transition:opacity 0.15s,transform 0.1s;}
+.omroep-btn:hover{opacity:0.8;}
+.omroep-btn.selected{opacity:1;transform:scale(1.05);}
+.omroep-AVROTROS{background:#0a0a4a;color:#00eaff;border-color:#00eaff;}
+.omroep-BNNVARA{background:#ffffff;color:#cc0000;border-color:#cc0000;}
+.omroep-EO{background:#6a0dad;color:#ffffff;border-color:#6a0dad;}
+.omroep-HUMAN{background:#ff5500;color:#ff00cc;border-color:#ff00cc;}
+.omroep-KRONCRV{background:#5a0080;color:#ffffff;border-color:#5a0080;}
+.omroep-MAX{background:#b3d9f5;color:#00ff88;border-color:#00ff88;}
+.omroep-MAX .max-dash{color:#ff00aa;}
+.omroep-PowNed{background:#ff69b4;color:#ffffff;border-color:#ff69b4;}
+.omroep-VPRO{background:#52BDEC;color:#ffffff;border-color:#52BDEC;}
+.omroep-WNL{background:#ff7700;color:#ffffff;border-color:#ff7700;}
+.omroep-NTR{background:#00C389;color:#000000;border-color:#00C389;}
+.card-omroepen{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;}
+.omroep-tag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;letter-spacing:0.2px;}
+
 /* CHIPS */
 .chips{display:flex;flex-wrap:wrap;gap:6px;}
 .chip{display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);}
@@ -438,7 +457,7 @@ async function loadProjecten(){
 }
 
 async function saveTalentDB(t){
-  const p={naam:t.naam,categorie:t.categorieen&&t.categorieen[0]?t.categorieen[0]:'',categorieen:t.categorieen||[],genre:t.genres&&t.genres[0]?t.genres[0]:'',genres:t.genres||[],mgmt:t.mgmt,notes:t.notes,foto_url:t.foto_url,ig_url:t.ig_url||'',ig_followers:t.ig_followers||null,tt_url:t.tt_url||'',tt_followers:t.tt_followers||null,yt_url:t.yt_url||'',yt_followers:t.yt_followers||null,expertise:t.expertise||'',gender:t.gender||''};
+  const p={naam:t.naam,categorie:t.categorieen&&t.categorieen[0]?t.categorieen[0]:'',categorieen:t.categorieen||[],genre:t.genres&&t.genres[0]?t.genres[0]:'',genres:t.genres||[],mgmt:t.mgmt,notes:t.notes,foto_url:t.foto_url,ig_url:t.ig_url||'',ig_followers:t.ig_followers||null,tt_url:t.tt_url||'',tt_followers:t.tt_followers||null,yt_url:t.yt_url||'',yt_followers:t.yt_followers||null,expertise:t.expertise||'',gender:t.gender||'',omroepen:t.omroepen||[]};
   if(t.id){const {error}=await db.from('talents').update(p).eq('id',t.id);if(error){showToast('Opslaan mislukt');return false;}}
   else{const {error}=await db.from('talents').insert(p);if(error){showToast('Toevoegen mislukt: '+error.message);return false;}}
   return true;
@@ -517,6 +536,7 @@ function renderGrid(){
     const ttLink=t.tt_url?'<a class="card-social-link" href="'+t.tt_url+'" target="_blank" onclick="event.stopPropagation()">'+ttSVG+(formatK(t.tt_followers)||'TT')+'</a>':'';
     const ytLink=t.yt_url?'<a class="card-social-link" href="'+t.yt_url+'" target="_blank" onclick="event.stopPropagation()">'+ytSVG+(formatK(t.yt_followers)||'YT')+'</a>':'';
     const socials=(igLink||ttLink||ytLink)?'<div class="card-socials">'+igLink+ttLink+ytLink+'</div>':'';
+    const omroepTags=t.omroepen&&t.omroepen.length?'<div class="card-omroepen">'+omroepTagsHTML(t.omroepen)+'</div>':'';
     const isSelected=selectedIds.has(t.id);
 
     let overlay='';
@@ -537,7 +557,7 @@ function renderGrid(){
       +'<div class="card-name">'+t.naam+'</div>'
       +'<div class="card-genres">'+genreTags+'</div>'
       +'<div class="card-cats">'+catBadges+'</div>'
-      +socials+'</div></div>';
+      +socials+omroepTags+'</div></div>';
   }).join('');
 }
 
@@ -668,6 +688,48 @@ function setGenderButtons(val){
   });
 }
 
+// ── OMROEPEN ─────────────────────────────────────────────────────────
+const OMROEPEN = [
+  {id:'AVROTROS', label:'AVROTROS', bg:'#0a0a4a', color:'#00eaff', border:'#00eaff'},
+  {id:'BNNVARA',  label:'BNNVARA',  bg:'#ffffff', color:'#cc0000', border:'#cc0000'},
+  {id:'EO',       label:'EO',       bg:'#6a0dad', color:'#ffffff', border:'#6a0dad'},
+  {id:'HUMAN',    label:'HUMAN',    bg:'#ff5500', color:'#ff00cc', border:'#ff00cc'},
+  {id:'KRONCRV',  label:'KRO-NCRV', bg:'#5a0080', color:'#ffffff', border:'#5a0080'},
+  {id:'MAX',      label:'Omroep MAX', bg:'#b3d9f5', color:'#00ff88', border:'#00ff88'},
+  {id:'PowNed',   label:'PowNed',   bg:'#ff69b4', color:'#ffffff', border:'#ff69b4'},
+  {id:'VPRO',     label:'VPRO',     bg:'#52BDEC', color:'#ffffff', border:'#52BDEC'},
+  {id:'WNL',      label:'WNL',      bg:'#ff7700', color:'#ffffff', border:'#ff7700'},
+  {id:'NTR',      label:'NTR',      bg:'#00C389', color:'#000000', border:'#00C389'},
+];
+
+function omroepPickerHTML(sel){
+  sel=sel||[];
+  return '<div class="omroep-picker" id="omroep-picker">'
+    +OMROEPEN.map(function(o){
+      var isMax=o.id==='MAX';
+      var lbl=isMax?'Omroep <span style="color:#ff00aa;">&#8212;</span> MAX':o.label;
+      var cls='omroep-btn'+(sel.includes(o.id)?' selected':'');
+      var st='background:'+o.bg+';color:'+o.color+';border-color:'+o.border+';';
+      return '<button type="button" data-oid="'+o.id+'" class="'+cls+'" style="'+st+'" onclick="toggleOmroep(this)">'+lbl+'</button>';
+    }).join('')
+    +'</div>';
+}
+
+function toggleOmroep(btn){btn.classList.toggle('selected');}
+function getSelectedOmroepen(){
+  return Array.from(document.querySelectorAll('#omroep-picker button.selected')).map(b=>b.dataset.oid).filter(Boolean);
+}
+
+function omroepTagsHTML(ids){
+  if(!ids||!ids.length) return '';
+  return ids.map(id=>{
+    const o=OMROEPEN.find(x=>x.id===id);
+    if(!o) return '';
+    const label=id==='MAX'?'Omroep — MAX':o.label;
+    return '<span class="omroep-tag" style="background:'+o.bg+';color:'+o.color+';border:1px solid '+o.border+';">'+label+'</span>';
+  }).join('');
+}
+
 // ── PICKERS ───────────────────────────────────────────────────────────
 function genrePickerHTML(sel){return '<div class="picker" id="genre-picker">'+genres.map(g=>'<button type="button" class="pick-btn'+(sel.includes(g)?' selected':'')+'" onclick="this.classList.toggle(\'selected\')">'+g+'</button>').join('')+'</div>';}
 function catPickerHTML(sel){return '<div class="picker" id="cat-picker">'+CAT_DEFS.map(d=>'<button type="button" class="cat-pick-btn '+d.cls+(sel.includes(d.key)?' selected':'')+'" onclick="this.classList.toggle(\'selected\')">'+d.key+'</button>').join('')+'</div>';}
@@ -704,6 +766,7 @@ function openModal(mode,id){
       +'<div><div class="field-label">Gender</div><div class="picker"><button type="button" class="pick-btn gdr" onclick="toggleGender(this,\'Man\')">Man</button><button type="button" class="pick-btn gdr" onclick="toggleGender(this,\'Vrouw\')">Vrouw</button><button type="button" class="pick-btn gdr" onclick="toggleGender(this,\'X\')">X</button></div></div>'
       +'<div><div class="field-label">Genres</div>'+genrePickerHTML([])+'</div>'
       +'<div><div class="field-label">Management / contact</div><input id="m-mgmt" type="text" placeholder="Naam of e-mailadres"></div>'
+      +'<div><div class="field-label">Publieke omroepen</div>'+omroepPickerHTML([])+'</div>'
       +socialSection('',null,'',null,null,null)
       +'<div><div class="field-label">Notities</div><textarea id="m-notes" rows="3" placeholder="Eerste indruk, ideeën..."></textarea></div>'
       +'<div class="btn-row"><button class="btn-primary" onclick="addTalent()">Toevoegen</button><button onclick="closeModal()">Annuleren</button></div>';
@@ -763,7 +826,7 @@ function handleOverlayClick(e){if(e.target===document.getElementById('overlay'))
 async function addTalent(){
   const naam=(document.getElementById('m-naam')||{}).value.trim();
   if(!naam){showToast('Vul een naam in');return;}
-  const ok=await saveTalentDB(Object.assign({naam,categorieen:getPickerValues('cat-picker'),genres:getPickerValues('genre-picker'),mgmt:(document.getElementById('m-mgmt')||{}).value||'',notes:(document.getElementById('m-notes')||{}).value||'',expertise:(document.getElementById('m-expertise')||{}).value||'',gender:getGender(),foto_url:getFinalFoto('')},getSocials()));
+  const ok=await saveTalentDB(Object.assign({naam,categorieen:getPickerValues('cat-picker'),genres:getPickerValues('genre-picker'),mgmt:(document.getElementById('m-mgmt')||{}).value||'',notes:(document.getElementById('m-notes')||{}).value||'',expertise:(document.getElementById('m-expertise')||{}).value||'',gender:getGender(),omroepen:getSelectedOmroepen(),foto_url:getFinalFoto('')},getSocials()));
   if(ok){closeModal();await loadTalents();showToast('Talent toegevoegd!');}
 }
 
@@ -771,7 +834,7 @@ async function updateTalent(){
   const naam=(document.getElementById('m-naam')||{}).value.trim();
   if(!naam){showToast('Vul een naam in');return;}
   const t=talents.find(x=>x.id===activeId);
-  const ok=await saveTalentDB(Object.assign({id:activeId,naam,categorieen:getPickerValues('cat-picker'),genres:getPickerValues('genre-picker'),mgmt:(document.getElementById('m-mgmt')||{}).value||'',notes:(document.getElementById('m-notes')||{}).value||'',expertise:(document.getElementById('m-expertise')||{}).value||'',gender:getGender(),foto_url:getFinalFoto(t.foto_url||'')},getSocials()));
+  const ok=await saveTalentDB(Object.assign({id:activeId,naam,categorieen:getPickerValues('cat-picker'),genres:getPickerValues('genre-picker'),mgmt:(document.getElementById('m-mgmt')||{}).value||'',notes:(document.getElementById('m-notes')||{}).value||'',expertise:(document.getElementById('m-expertise')||{}).value||'',gender:getGender(),omroepen:getSelectedOmroepen(),foto_url:getFinalFoto(t.foto_url||'')},getSocials()));
   if(ok){closeModal();await loadTalents();showToast('Opgeslagen!');}
 }
 
