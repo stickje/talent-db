@@ -198,6 +198,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0.6
 .filter-bar{display:flex;gap:4px;align-items:center;flex-wrap:wrap;padding:0.4rem 1.5rem;border-bottom:1px solid var(--border);background:var(--bg);}
 .filter-bar.collapsed{padding:0;max-height:0;border-bottom:none;}
 .sticky-outer{position:sticky;top:0;z-index:50;background:var(--bg);}
+.page-content{flex:1;}
 .sticky-bar{background:var(--bg);}
 .filter-bar-toggle{position:sticky;top:110px;z-index:38;display:flex;justify-content:center;padding:3px 0;background:var(--bg);border-bottom:1px solid var(--border);cursor:pointer;}
 .filter-bar-toggle button{background:none;border:none;color:var(--text3);font-size:11px;letter-spacing:1px;padding:3px 12px;display:flex;align-items:center;gap:5px;}
@@ -406,13 +407,7 @@ button:hover{border-color:var(--text2);}
     </div><!-- /sticky-bar end -->
 </div>
 
-<div class="app">
-
-  </div>
-
-  <div class="main">
-
-
+<div class="page-content">
     <div class="grid-wrap">
       <div class="count" id="count"></div>
       <div class="grid" id="grid"><div class="loading"><div class="spinner"></div> Talenten laden...</div></div>
@@ -421,10 +416,6 @@ button:hover{border-color:var(--text2);}
   </div>
 </div>
 
-<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
-  <div class="modal" id="modal-inner"></div>
-</div>
-<div class="toast" id="toast"></div>
 
 <script>
 const SUPABASE_URL = 'https://gtxsegnlmpgibucmuorn.supabase.co';
@@ -518,14 +509,6 @@ async function deleteGenreFromDB(naam){const {error}=await db.from('genres').del
 // ── RENDER ───────────────────────────────────────────────────────────
 function renderSidebar(){
   renderProjectDropdown();
-  const el=document.getElementById('sidebar-projects');
-  el.innerHTML=projecten.map(p=>{
-    const count=(projectTalents[p.id]||[]).length;
-    return '<div class="sidebar-item'+(activeProjectId===p.id?' active':'')+'" data-pid="'+p.id+'">'
-      +'<span class="sidebar-item-name">'+p.naam+'</span>'
-      +'<span class="sidebar-item-count">'+count+'</span></div>';
-  }).join('');
-  document.querySelector('.sidebar-item.all').classList.toggle('active',activeProjectId===null);
 }
 
 function renderGrid(){
@@ -1071,310 +1054,15 @@ async function exportPDF(list,projectNaam,b64map){
   win.document.close();
   win.focus();
   setTimeout(()=>{win.print();},800);
-  showToast('PDF geopend — sla op als PDF via de printdialoog!');
+  showToast('PDF geopend!');
 }
 
-async function exportDOCX(list,projectNaam,b64map){
-  if(!window.docx){showToast('docx library niet geladen');return;}
-  const {Document,Packer,Paragraph,Table,TableRow,TableCell,ImageRun,TextRun,AlignmentType,WidthType,BorderStyle}=window.docx;
-
-  const COLS=4;
-  const rows=[];
-  for(let i=0;i<list.length;i+=COLS){
-    const rowTalents=list.slice(i,i+COLS);
-    // Pad to COLS
-    while(rowTalents.length<COLS)rowTalents.push(null);
-
-    const imgCells=rowTalents.map(t=>{
-      const b64=t&&b64map[t.id];
-      const children=[];
-      if(b64){
-        try{
-          const base64Data=b64.split(',')[1];
-          const mimeMatch=b64.match(/data:([^;]+)/);
-          const mime=mimeMatch?mimeMatch[1]:'image/jpeg';
-          const imgType=mime.includes('png')?'PNG':'JPG';
-          children.push(new Paragraph({
-            alignment:AlignmentType.CENTER,
-            children:[new ImageRun({data:base64Data,transformation:{width:100,height:100},type:imgType})]
-          }));
-        }catch(e){
-          children.push(new Paragraph({text:''}));
-        }
-      } else if(t){
-        children.push(new Paragraph({text:initials(t.naam),alignment:AlignmentType.CENTER}));
-      } else {
-        children.push(new Paragraph({text:''}));
-      }
-      return new TableCell({
-        children,
-        width:{size:25,type:WidthType.PERCENTAGE},
-        borders:{top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}},
-        margins:{top:80,bottom:80,left:80,right:80}
-      });
-    });
-
-    const nameCells=rowTalents.map(t=>new TableCell({
-      children:[new Paragraph({
-        alignment:AlignmentType.CENTER,
-        children:[new TextRun({text:t?t.naam:'',bold:true,size:20})]
-      })],
-      width:{size:25,type:WidthType.PERCENTAGE},
-      borders:{top:{style:BorderStyle.NONE},bottom:{style:BorderStyle.NONE},left:{style:BorderStyle.NONE},right:{style:BorderStyle.NONE}},
-      margins:{top:0,bottom:160,left:80,right:80}
-    }));
-
-    rows.push(new TableRow({children:imgCells}));
-    rows.push(new TableRow({children:nameCells}));
-  }
-
-  const doc=new Document({
-    sections:[{
-      properties:{},
-      children:[
-        new Paragraph({children:[new TextRun({text:projectNaam,bold:true,size:32})],spacing:{after:120}}),
-        new Paragraph({children:[new TextRun({text:list.length+' talent'+(list.length!==1?'en':''),color:'888888',size:18})],spacing:{after:400}}),
-        new Table({rows,width:{size:100,type:WidthType.PERCENTAGE}})
-      ]
-    }]
-  });
-
-  const blob=await Packer.toBlob(doc);
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=projectNaam.replace(/[^a-zA-Z0-9]/g,'_')+'_talenten.docx';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('Word-bestand gedownload!');
-}
-
-// ── IMPORT ────────────────────────────────────────────────────────────
-function openImport(){
-  document.getElementById('csv-import-input').value='';
-  document.getElementById('csv-import-input').click();
-}
-
-async function handleCSVImport(e){
-  const file=e.target.files[0]; if(!file)return;
-  const text=await file.text();
-  const lines=text.replace(/\r/g,"").split("\n").filter(l=>l.trim());
-  if(!lines.length){showToast('Leeg bestand');return;}
-
-  // Detect header row
-  const firstLower=lines[0].toLowerCase();
-  const hasHeader=firstLower.includes('naam')||firstLower.includes('name');
-  const dataLines=hasHeader?lines.slice(1):lines;
-
-  // Parse CSV columns: Naam, Categorie, Genre, Management (all optional except naam)
-  const parsed=dataLines.map(line=>{
-    // Handle quoted fields
-    const cols=[];
-    let cur='', inQ=false;
-    for(let i=0;i<line.length;i++){
-      const c=line[i];
-      if(c==='"'){inQ=!inQ;}
-      else if(c===','&&!inQ){cols.push(cur.trim());cur='';}
-      else{cur+=c;}
-    }
-    cols.push(cur.trim());
-    return cols;
-  }).filter(c=>c[0]);
-
-  if(!parsed.length){showToast('Geen namen gevonden');return;}
-
-  // Detect columns from header
-  let naamIdx=0,catIdx=-1,genreIdx=-1,mgmtIdx=-1;
-  if(hasHeader){
-    const hdr=lines[0].split(',').map(h=>h.replace(/"/g,'').trim().toLowerCase());
-    hdr.forEach((h,i)=>{
-      if(h.includes('naam')||h.includes('name'))naamIdx=i;
-      else if(h.includes('cat'))catIdx=i;
-      else if(h.includes('genre'))genreIdx=i;
-      else if(h.includes('mgmt')||h.includes('management')||h.includes('contact'))mgmtIdx=i;
-    });
-  }
-
-  // Show preview modal
-  document.getElementById('overlay').classList.add('open');
-  const inner=document.getElementById('modal-inner');
-  inner.innerHTML='';
-
-  const header=document.createElement('div');
-  header.className='modal-header';
-  const title=document.createElement('span');
-  title.className='modal-title'; title.textContent='CSV IMPORTEREN';
-  const xbtn=document.createElement('button');
-  xbtn.style.cssText='background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;';
-  xbtn.textContent='×'; xbtn.onclick=closeModal;
-  header.appendChild(title); header.appendChild(xbtn);
-  inner.appendChild(header);
-
-  const desc=document.createElement('div');
-  desc.style.cssText='font-size:13px;color:var(--text2);';
-  desc.textContent=parsed.length+' talent'+(parsed.length!==1?'en':'')+' gevonden. Eerste 5 als voorbeeld:';
-  inner.appendChild(desc);
-
-  const preview=document.createElement('div');
-  preview.style.cssText='background:var(--surface2);border-radius:var(--radius);padding:10px 14px;font-size:13px;display:flex;flex-direction:column;gap:4px;';
-  parsed.slice(0,5).forEach(cols=>{
-    const row=document.createElement('div');
-    row.style.cssText='display:flex;align-items:center;gap:8px;';
-    const avatar=document.createElement('div');
-    const naam=cols[naamIdx]||'';
-    avatar.style.cssText='width:28px;height:28px;border-radius:50%;background:var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0;';
-    avatar.textContent=initials(naam)||'?';
-    const name=document.createElement('span');
-    name.textContent=naam;
-    row.appendChild(avatar); row.appendChild(name);
-    preview.appendChild(row);
-  });
-  if(parsed.length>5){
-    const more=document.createElement('div');
-    more.style.cssText='color:var(--text3);font-size:12px;margin-top:4px;';
-    more.textContent='+ nog '+(parsed.length-5)+' meer...';
-    preview.appendChild(more);
-  }
-  inner.appendChild(preview);
-
-  const importBtn=document.createElement('button');
-  importBtn.className='btn-primary';
-  importBtn.style.cssText='padding:10px;font-size:14px;';
-  importBtn.textContent='Importeer '+parsed.length+' talenten';
-  importBtn.onclick=()=>doImport(parsed,naamIdx,catIdx,genreIdx,mgmtIdx);
-  inner.appendChild(importBtn);
-
-  const cancelBtn=document.createElement('button');
-  cancelBtn.textContent='Annuleren';
-  cancelBtn.onclick=closeModal;
-  inner.appendChild(cancelBtn);
-
-  window._importParsed=parsed;
-  window._importIndices={naamIdx,catIdx,genreIdx,mgmtIdx};
-}
-
-async function doImport(parsed,naamIdx,catIdx,genreIdx,mgmtIdx){
-  closeModal();
-  showToast('Bezig met importeren...');
-  let success=0, failed=0;
-
-  for(const cols of parsed){
-    const naam=(cols[naamIdx]||'').trim();
-    if(!naam)continue;
-    const cat=catIdx>=0?(cols[catIdx]||'').trim():'';
-    const genre=genreIdx>=0?(cols[genreIdx]||'').trim():'';
-    const mgmt=mgmtIdx>=0?(cols[mgmtIdx]||'').trim():'';
-    const payload={
-      naam,
-      categorie:cat,
-      categorieen:cat?[cat]:[],
-      genre,
-      genres:genre?[genre]:[],
-      mgmt,
-      notes:'',
-      foto_url:'',
-      ig_url:'',ig_followers:null,
-      tt_url:'',tt_followers:null,
-    };
-    const {error}=await db.from('talents').insert(payload);
-    if(error)failed++; else success++;
-  }
-
-  await loadTalents();
-  if(failed>0)showToast(success+' geïmporteerd, '+failed+' mislukt');
-  else showToast(success+' talenten geïmporteerd!');
-}
-
-// ── TOAST & EVENTS ────────────────────────────────────────────────────
-function toggleSidebar(){}
-
-function toggleProjectDropdown(){
-  const dd=document.getElementById('project-dropdown');
-  dd.style.display=dd.style.display==='none'?'block':'none';
-}
-function closeProjectDropdown(){
-  document.getElementById('project-dropdown').style.display='none';
-}
-document.addEventListener('click',function(e){
-  const wrap=document.getElementById('project-dropdown-wrap');
-  if(wrap&&!wrap.contains(e.target))closeProjectDropdown();
-});
-
-function renderProjectDropdown(){
-  const list=document.getElementById('project-dropdown-list');
-  if(!list)return;
-  const allActive=activeProjectId===null;
-  list.innerHTML='<div onclick="selectProject(null);closeProjectDropdown();" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:12px;cursor:pointer;background:'+(allActive?'rgba(26,110,245,0.1)':'transparent')+';color:'+(allActive?'var(--accent)':'var(--text)')+';">'
-    +'<span>Alle talenten</span>'
-    +'<span style="font-size:10px;color:var(--text3);">'+talents.length+'</span>'
-    +'</div>'
-    +projecten.map(p=>{
-      const isActive=activeProjectId===p.id;
-      const count=(projectTalents[p.id]||[]).length;
-      return '<div onclick="selectProject('+p.id+');closeProjectDropdown();" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:12px;cursor:pointer;border-top:1px solid var(--border);background:'+(isActive?'rgba(26,110,245,0.1)':'transparent')+';color:'+(isActive?'var(--accent)':'var(--text')+');">'
-        +'<span>'+p.naam+'</span>'
-        +'<span style="font-size:10px;color:var(--text3);">'+count+'</span>'
-        +'</div>';
-    }).join('');
-  const label=document.getElementById('project-dropdown-label');
-  if(label){
-    if(activeProjectId){
-      const p=projecten.find(x=>x.id===activeProjectId);
-      label.textContent=p?p.naam:'Project';
-    } else {
-      label.textContent='Alle talenten';
-    }
-  }
-}
-
-
-function toggleMode(){
-  const isDay=document.body.classList.toggle('day-mode');
-  document.getElementById('mode-toggle').textContent=isDay?'☀️':'🌙';
-  localStorage.setItem('colorMode',isDay?'day':'night');
-}
-
-// Restore saved mode — default is night
-(function(){
-  const saved=localStorage.getItem('colorMode');
-  if(saved==='day'){
-    document.body.classList.add('day-mode');
-    document.addEventListener('DOMContentLoaded',()=>{
-      const btn=document.getElementById('mode-toggle');
-      if(btn)btn.textContent='☀️';
-    });
-  }
-  // If no saved preference or 'night', body stays without day-mode class = night mode
-})();
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
-
-document.getElementById('search').addEventListener('input',e=>{searchQ=e.target.value;renderGrid();});
-document.getElementById('omroep-filters') && document.getElementById('omroep-filters').addEventListener('click',e=>{
-  const btn=e.target.closest('button'); if(!btn) return;
-  // handled by onclick
-});
-
-document.getElementById('gender-filters').addEventListener('click',e=>{
-  const btn=e.target.closest('[data-gender]'); if(!btn) return;
-  activeGender=btn.dataset.gender;
-  document.querySelectorAll('[data-gender]').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); renderGrid();
-});
-document.getElementById('cat-filters').addEventListener('click',e=>{
-  const btn=e.target.closest('[data-cat]');if(!btn)return;
-  activeCat=btn.dataset.cat;
-  document.querySelectorAll('[data-cat]').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');renderGrid();
-});
-
-document.querySelector('.sidebar-content').addEventListener('click',e=>{
-  const item=e.target.closest('[data-pid]');
-  if(!item)return;
-  if(item.dataset.pid==='all'){selectProject(null);}
-  else{selectProject(Number(item.dataset.pid));}
-});
-
-(async()=>{await loadAll();})();
 </script>
+
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="modal" id="modal-inner"></div>
+</div>
+<div class="toast" id="toast"></div>
+
 </body>
 </html>
