@@ -800,9 +800,24 @@ function onProgrammaInput(input){
   if(!q){sug.style.display='none';return;}
   const matches=programmas.filter(p=>p.toLowerCase().includes(q)&&!getProgrammasInput().includes(p));
   if(!matches.length&&q.length<2){sug.style.display='none';return;}
-  var html=matches.map(p=>'<div onclick="addProgrammaTag(''+p+'')" style="padding:7px 10px;font-size:12px;cursor:pointer;color:var(--text);" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">'+p+'</div>').join('');
-  if(q&&!programmas.find(p=>p.toLowerCase()===q)){html+='<div onclick="addProgrammaTag(''+input.value.trim()+'')" style="padding:7px 10px;font-size:12px;cursor:pointer;color:var(--accent);">+ "'+input.value.trim()+'" toevoegen</div>';}
-  sug.innerHTML=html;sug.style.display='block';
+  sug.innerHTML='';
+  matches.forEach(function(p){
+    var div=document.createElement('div');
+    div.textContent=p;
+    div.style.cssText='padding:7px 10px;font-size:12px;cursor:pointer;color:var(--text);';
+    div.onmouseover=function(){this.style.background='var(--surface2)';};
+    div.onmouseout=function(){this.style.background='';};
+    div.onclick=function(){addProgrammaTag(p);};
+    sug.appendChild(div);
+  });
+  if(q&&!programmas.find(p=>p.toLowerCase()===q)){
+    var div=document.createElement('div');
+    div.textContent='+ "'+input.value.trim()+'" toevoegen';
+    div.style.cssText='padding:7px 10px;font-size:12px;cursor:pointer;color:var(--accent);';
+    div.onclick=function(){addProgrammaTag(input.value.trim());};
+    sug.appendChild(div);
+  }
+  sug.style.display='block';
 }
 
 function addProgrammaTag(naam){
