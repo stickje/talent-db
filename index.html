@@ -38,6 +38,7 @@ body.day-mode html { background:#fff; }
 body.day-mode header { background:#fff; border-bottom:1px solid #e2e2e2; }
 body.day-mode .sidebar { background:#fff; border-right:1px solid #e2e2e2; }
 body.day-mode .toolbar { background:#fff; border-bottom:1px solid #e2e2e2; }
+body.day-mode .filter-bar-toggle { background:#fff; border-bottom:1px solid #e2e2e2; }
 body.day-mode .filter-bar { background:#fff; border-bottom:1px solid #e2e2e2; }
 body.day-mode .grid-wrap { background:#fff; }
 body.day-mode .main { background:#fff; }
@@ -144,7 +145,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:1.2
 .logo span{color:var(--text2);font-size:0.85rem;letter-spacing:4px;display:block;font-family:var(--font-body);font-weight:300;margin-top:2px;}
 .header-actions{display:flex;gap:8px;}
 
-.app{display:flex;flex:1;overflow:hidden;}
+.app{display:flex;flex:1;overflow:hidden;height:calc(100vh - 70px);}
 
 /* SIDEBAR */
 .sidebar{width:var(--sidebar);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;transition:width 0.25s ease;overflow-x:hidden;}
@@ -169,7 +170,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:1.2
 .sidebar-divider{height:1px;background:var(--border);margin:4px 0;}
 
 /* MAIN */
-.main{flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;position:relative;}
 
 /* PROJECT BANNER */
 .project-banner{display:none;background:var(--surface);border-bottom:1px solid var(--border);padding:0.75rem 1.5rem;align-items:center;gap:14px;}
@@ -186,12 +187,16 @@ header{display:flex;align-items:center;justify-content:space-between;padding:1.2
 .selecting-bar button:hover{background:rgba(0,0,0,0.25);}
 
 /* TOOLBAR */
-.toolbar{display:flex;gap:10px;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border);}
+.toolbar{display:flex;gap:10px;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:40;background:var(--bg);}
 .search-wrap{position:relative;flex:1;min-width:200px;}
 .search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:0.4;pointer-events:none;}
 .search-wrap input{padding-left:38px;}
 
-.filter-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:0.75rem 1.5rem;border-bottom:1px solid var(--border);}
+.filter-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:0.75rem 1.5rem;border-bottom:1px solid var(--border);position:sticky;top:57px;z-index:39;background:var(--bg);transition:all 0.25s ease;overflow:hidden;}
+.filter-bar.collapsed{padding:0;max-height:0;border-bottom:none;}
+.filter-bar-toggle{position:sticky;top:110px;z-index:38;display:flex;justify-content:center;padding:3px 0;background:var(--bg);border-bottom:1px solid var(--border);cursor:pointer;}
+.filter-bar-toggle button{background:none;border:none;color:var(--text3);font-size:11px;letter-spacing:1px;padding:3px 12px;display:flex;align-items:center;gap:5px;}
+.filter-bar-toggle button:hover{color:var(--text2);border:none;}
 .filter-sep{width:1px;height:18px;background:var(--border2);margin:0 2px;}
 .pill{font-size:12px;padding:4px 12px;border-radius:99px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--font-body);transition:all 0.15s;}
 .pill:hover{border-color:var(--text3);color:var(--text);}
@@ -397,6 +402,12 @@ button:hover{border-color:var(--text2);}
       <div id="genre-filters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
     </div>
 
+    <div class="filter-bar-toggle" id="filter-toggle" onclick="toggleFilterBar()">
+      <button id="filter-toggle-btn">
+        <svg id="filter-chevron" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="transition:transform 0.25s"><polyline points="18 15 12 9 6 15"/></svg>
+        <span id="filter-toggle-label">Filters inklappen</span>
+      </button>
+    </div>
     <div class="grid-wrap">
       <div class="count" id="count"></div>
       <div class="grid" id="grid"><div class="loading"><div class="spinner"></div> Talenten laden...</div></div>
@@ -1270,6 +1281,44 @@ async function doImport(parsed,naamIdx,catIdx,genreIdx,mgmtIdx){
 
 // ── TOAST & EVENTS ────────────────────────────────────────────────────
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('collapsed');}
+
+let filterCollapsed=false;
+function toggleFilterBar(){
+  filterCollapsed=!filterCollapsed;
+  const bar=document.querySelector('.filter-bar');
+  const chevron=document.getElementById('filter-chevron');
+  const label=document.getElementById('filter-toggle-label');
+  if(filterCollapsed){
+    bar.style.maxHeight='0';
+    bar.style.padding='0';
+    bar.style.borderBottom='none';
+    chevron.style.transform='rotate(180deg)';
+    label.textContent='Filters uitvouwen';
+  } else {
+    bar.style.maxHeight='';
+    bar.style.padding='';
+    bar.style.borderBottom='';
+    chevron.style.transform='rotate(0deg)';
+    label.textContent='Filters inklappen';
+  }
+}
+
+// Auto-collapse filter bar on scroll down, expand on scroll up
+let lastScrollY=0;
+let scrollTimer=null;
+document.addEventListener('DOMContentLoaded',function(){
+  const mainEl=document.querySelector('.main');
+  if(!mainEl) return;
+  mainEl.addEventListener('scroll',function(){
+    const sy=mainEl.scrollTop;
+    if(sy>120&&sy>lastScrollY&&!filterCollapsed){
+      toggleFilterBar();
+    } else if(sy<lastScrollY&&filterCollapsed){
+      toggleFilterBar();
+    }
+    lastScrollY=sy;
+  });
+});
 
 function toggleMode(){
   const isDay=document.body.classList.toggle('day-mode');
