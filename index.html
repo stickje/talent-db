@@ -39,6 +39,7 @@ body.day-mode header { background:#fff; border-bottom:1px solid #e2e2e2; }
 body.day-mode .sidebar { background:#fff; border-right:1px solid #e2e2e2; }
 body.day-mode .toolbar { background:#fff; border-bottom:1px solid #e2e2e2; }
 body.day-mode .filter-bar-toggle { background:#fff; border-bottom:1px solid #e2e2e2; }
+body.day-mode .sticky-bar { background:#fff; }
 body.day-mode .filter-bar { background:#fff; border-bottom:1px solid #e2e2e2; }
 body.day-mode .grid-wrap { background:#fff; }
 body.day-mode .main { background:#fff; }
@@ -145,10 +146,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:1.2
 .logo span{color:var(--text2);font-size:0.85rem;letter-spacing:4px;display:block;font-family:var(--font-body);font-weight:300;margin-top:2px;}
 .header-actions{display:flex;gap:8px;}
 
-.app{display:flex;flex:1;overflow:hidden;height:calc(100vh - 70px);}
+.app{display:flex;flex:1;}
 
 /* SIDEBAR */
-.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;transition:width 0.25s ease;overflow-x:hidden;}
+.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;transition:width 0.25s ease;overflow-x:hidden;position:sticky;top:0;height:100vh;}
 .sidebar.collapsed{width:48px;}
 .sidebar-header{padding:1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .sidebar-title{font-family:var(--font-display);font-size:1rem;letter-spacing:1px;color:var(--text3);white-space:nowrap;overflow:hidden;transition:opacity 0.2s;}
@@ -170,7 +171,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:1.2
 .sidebar-divider{height:1px;background:var(--border);margin:4px 0;}
 
 /* MAIN */
-.main{flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;position:relative;}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;}
 
 /* PROJECT BANNER */
 .project-banner{display:none;background:var(--surface);border-bottom:1px solid var(--border);padding:0.75rem 1.5rem;align-items:center;gap:14px;}
@@ -187,13 +188,14 @@ header{display:flex;align-items:center;justify-content:space-between;padding:1.2
 .selecting-bar button:hover{background:rgba(0,0,0,0.25);}
 
 /* TOOLBAR */
-.toolbar{display:flex;gap:10px;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:40;background:var(--bg);}
+.toolbar{display:flex;gap:10px;align-items:center;padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:var(--bg);}
 .search-wrap{position:relative;flex:1;min-width:200px;}
 .search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:0.4;pointer-events:none;}
 .search-wrap input{padding-left:38px;}
 
-.filter-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:0.75rem 1.5rem;border-bottom:1px solid var(--border);position:sticky;top:57px;z-index:39;background:var(--bg);transition:all 0.25s ease;overflow:hidden;}
+.filter-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:0.75rem 1.5rem;border-bottom:1px solid var(--border);background:var(--bg);transition:max-height 0.3s ease,padding 0.3s ease;overflow:hidden;max-height:400px;}
 .filter-bar.collapsed{padding:0;max-height:0;border-bottom:none;}
+.sticky-bar{position:sticky;top:0;z-index:40;background:var(--bg);}
 .filter-bar-toggle{position:sticky;top:110px;z-index:38;display:flex;justify-content:center;padding:3px 0;background:var(--bg);border-bottom:1px solid var(--border);cursor:pointer;}
 .filter-bar-toggle button{background:none;border:none;color:var(--text3);font-size:11px;letter-spacing:1px;padding:3px 12px;display:flex;align-items:center;gap:5px;}
 .filter-bar-toggle button:hover{color:var(--text2);border:none;}
@@ -365,6 +367,7 @@ button:hover{border-color:var(--text2);}
       <button onclick="cancelSelecting()">Annuleren</button>
     </div>
 
+    <div class="sticky-bar">
     <div class="toolbar">
       <div class="search-wrap">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -408,6 +411,7 @@ button:hover{border-color:var(--text2);}
         <span id="filter-toggle-label">Filters inklappen</span>
       </button>
     </div>
+    </div><!-- /sticky-bar -->
     <div class="grid-wrap">
       <div class="count" id="count"></div>
       <div class="grid" id="grid"><div class="loading"><div class="spinner"></div> Talenten laden...</div></div>
@@ -1290,14 +1294,14 @@ function toggleFilterBar(){
   const label=document.getElementById('filter-toggle-label');
   if(filterCollapsed){
     bar.style.maxHeight='0';
-    bar.style.padding='0';
-    bar.style.borderBottom='none';
+    bar.style.paddingTop='0';
+    bar.style.paddingBottom='0';
     chevron.style.transform='rotate(180deg)';
     label.textContent='Filters uitvouwen';
   } else {
-    bar.style.maxHeight='';
-    bar.style.padding='';
-    bar.style.borderBottom='';
+    bar.style.maxHeight='400px';
+    bar.style.paddingTop='';
+    bar.style.paddingBottom='';
     chevron.style.transform='rotate(0deg)';
     label.textContent='Filters inklappen';
   }
@@ -1306,19 +1310,15 @@ function toggleFilterBar(){
 // Auto-collapse filter bar on scroll down, expand on scroll up
 let lastScrollY=0;
 let scrollTimer=null;
-document.addEventListener('DOMContentLoaded',function(){
-  const mainEl=document.querySelector('.main');
-  if(!mainEl) return;
-  mainEl.addEventListener('scroll',function(){
-    const sy=mainEl.scrollTop;
-    if(sy>120&&sy>lastScrollY&&!filterCollapsed){
-      toggleFilterBar();
-    } else if(sy<lastScrollY&&filterCollapsed){
-      toggleFilterBar();
-    }
-    lastScrollY=sy;
-  });
-});
+window.addEventListener('scroll',function(){
+  const sy=window.scrollY;
+  if(sy>120&&sy>lastScrollY&&!filterCollapsed){
+    toggleFilterBar();
+  } else if(sy<lastScrollY&&filterCollapsed){
+    toggleFilterBar();
+  }
+  lastScrollY=sy;
+},{passive:true});
 
 function toggleMode(){
   const isDay=document.body.classList.toggle('day-mode');
