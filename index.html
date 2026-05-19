@@ -511,6 +511,46 @@ function renderSidebar(){
   renderProjectDropdown();
 }
 
+function renderProjectDropdown(){
+  var list=document.getElementById('project-dropdown-list');
+  if(!list)return;
+  var html='';
+  var allActive=activeProjectId===null;
+  html+='<div onclick="selectProject(null);closeProjectDropdown();" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:12px;cursor:pointer;'+(allActive?'background:rgba(26,110,245,0.12);color:#1a6ef5;':'')+'">'
+    +'<span>Alle talenten</span><span style="font-size:10px;color:var(--text3);">'+talents.length+'</span></div>';
+  projecten.forEach(function(p){
+    var isActive=activeProjectId===p.id;
+    var count=(projectTalents[p.id]||[]).length;
+    html+='<div onclick="selectProject('+p.id+');closeProjectDropdown();" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;font-size:12px;cursor:pointer;border-top:1px solid var(--border);'+(isActive?'background:rgba(26,110,245,0.12);color:#1a6ef5;':'')+'">'
+      +'<span>'+p.naam+'</span><span style="font-size:10px;color:var(--text3);">'+count+'</span></div>';
+  });
+  list.innerHTML=html;
+  var label=document.getElementById('project-dropdown-label');
+  if(label){
+    var p=activeProjectId?projecten.find(function(x){return x.id===activeProjectId;}):null;
+    label.textContent=p?p.naam:'Alle talenten';
+  }
+}
+
+function toggleProjectDropdown(){
+  var dd=document.getElementById('project-dropdown');
+  if(dd)dd.style.display=dd.style.display==='none'?'block':'none';
+}
+function closeProjectDropdown(){
+  var dd=document.getElementById('project-dropdown');
+  if(dd)dd.style.display='none';
+}
+function toggleMode(){
+  var isDay=document.body.classList.toggle('day-mode');
+  document.getElementById('mode-toggle').textContent=isDay?'☀️':'🌙';
+  localStorage.setItem('colorMode',isDay?'day':'night');
+}
+(function(){
+  var saved=localStorage.getItem('colorMode');
+  if(saved==='day'){document.body.classList.add('day-mode');document.addEventListener('DOMContentLoaded',function(){var b=document.getElementById('mode-toggle');if(b)b.textContent='☀️';});}
+})();
+function toggleSidebar(){}
+
 function renderGrid(){
   const grid=document.getElementById('grid');
   const projIds=activeProjectId?(projectTalents[activeProjectId]||[]):null;
