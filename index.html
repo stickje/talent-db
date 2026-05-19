@@ -191,7 +191,7 @@ body.day-mode .proj-item.active{color:#1a6ef5;}
     <button class="btn-sm" onclick="startSelecting()">+ Toevoegen</button>
     <button class="btn-sm" onclick="exportTalenten()">↑ Export</button>
     <button class="btn-sm" onclick="openModal('edit-project')">Bewerken</button>
-    <button class="btn-sm btn-danger" onclick="deleteProject()">×</button>
+    <button class="btn-sm btn-danger" onclick="deleteProject()">&times;</button>
   </div>
 </div>
 
@@ -271,7 +271,7 @@ const igSVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke=
 const ttSVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/></svg>';
 const ytSVG='<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.8 15.5V8.5l6.2 3.5-6.2 3.5z"/></svg>';
 
-let talents=[],genres=[],projecten=[],projectTalents={};
+let talents=[],genres=[],programmas=[],projecten=[],projectTalents={};
 let activeCat='alle',activeGenres=new Set(),activeGender='alle',activeOmroep='alle';
 let searchQ='',sortMode='recent';
 let activeProjectId=null,activeId=null,pendingFoto='';
@@ -285,7 +285,17 @@ function tGenres(t){return Array.isArray(t.genres)&&t.genres.length?t.genres:(t.
 function tCats(t){return Array.isArray(t.categorieen)&&t.categorieen.length?t.categorieen:(t.categorie?[t.categorie]:[]);}
 
 // ── DATABASE ──────────────────────────────────────────────────────────
-async function loadAll(){await Promise.all([loadGenres(),loadTalents(),loadProjecten()]);}
+async function loadAll(){await Promise.all([loadGenres(),loadTalents(),loadProjecten(),loadProgrammas()]);}
+
+async function loadProgrammas(){
+  const {data}=await db.from('programmas').select('naam').order('naam');
+  programmas=(data||[]).map(p=>p.naam);
+}
+
+async function saveProgrammaDB(naam){
+  const {error}=await db.from('programmas').upsert({naam},{onConflict:'naam',ignoreDuplicates:true});
+  return !error;
+}
 
 async function loadTalents(){
   const {data,error}=await db.from('talents').select('*').order('created_at',{ascending:false});
@@ -312,7 +322,7 @@ async function loadProjecten(){
 }
 
 async function saveTalentDB(t){
-  const p={naam:t.naam,categorie:t.categorieen&&t.categorieen[0]?t.categorieen[0]:'',categorieen:t.categorieen||[],genre:t.genres&&t.genres[0]?t.genres[0]:'',genres:t.genres||[],mgmt:t.mgmt||'',notes:t.notes||'',foto_url:t.foto_url||'',ig_url:t.ig_url||'',ig_followers:t.ig_followers||null,tt_url:t.tt_url||'',tt_followers:t.tt_followers||null,yt_url:t.yt_url||'',yt_followers:t.yt_followers||null,expertise:t.expertise||'',gender:t.gender||'',omroepen:t.omroepen||[]};
+  const p={naam:t.naam,categorie:t.categorieen&&t.categorieen[0]?t.categorieen[0]:'',categorieen:t.categorieen||[],genre:t.genres&&t.genres[0]?t.genres[0]:'',genres:t.genres||[],mgmt:t.mgmt||'',notes:t.notes||'',foto_url:t.foto_url||'',ig_url:t.ig_url||'',ig_followers:t.ig_followers||null,tt_url:t.tt_url||'',tt_followers:t.tt_followers||null,yt_url:t.yt_url||'',yt_followers:t.yt_followers||null,expertise:t.expertise||'',gender:t.gender||'',omroepen:t.omroepen||[],programmas:t.programmas||[]};
   if(t.id){const {error}=await db.from('talents').update(p).eq('id',t.id);if(error){showToast('Opslaan mislukt');return false;}}
   else{const {error}=await db.from('talents').insert(p);if(error){showToast('Toevoegen mislukt: '+error.message);return false;}}
   return true;
@@ -563,7 +573,7 @@ function getSocials(){
 }
 
 // ── MODALS ────────────────────────────────────────────────────────────
-function xBtn(){return '<button onclick="closeModal()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;">×</button>';}
+function xBtn(){return '<button onclick="closeModal()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;">&times;</button>';}
 
 function openModal(mode,id){
   activeId=id||null;pendingFoto='';_selectedGender='';
@@ -580,6 +590,7 @@ function openModal(mode,id){
       +'<div><div class="field-label">Genres</div>'+genrePickerHTML([])+'</div>'
       +'<div><div class="field-label">Management / contact</div><input id="m-mgmt" type="text" placeholder="Naam of e-mailadres"></div>'
       +'<div><div class="field-label">Publieke omroepen</div>'+omroepPickerHTML([])+'</div>'
+      +programmasSection([])
       +socialSection('',null,'',null,'',null)
       +'<div><div class="field-label">Notities</div><textarea id="m-notes" rows="3" placeholder="Eerste indruk, ideeën..."></textarea></div>'
       +'<div class="btn-row"><button class="btn-primary" onclick="addTalent()">Toevoegen</button><button onclick="closeModal()">Annuleren</button></div>';
@@ -599,6 +610,7 @@ function openModal(mode,id){
       +(t.mgmt&&t.mgmt.includes('@')?'<div style="display:flex;gap:5px;"><input id="m-mgmt" type="text" value="'+t.mgmt+'" style="flex:1"><a href="mailto:'+t.mgmt+'?subject=Over '+t.naam+'" style="display:inline-flex;align-items:center;padding:5px 10px;border:1px solid var(--border2);border-radius:var(--radius);color:var(--text2);text-decoration:none;font-size:11px;background:var(--surface2);">✉ Mail</a></div>'
       :'<input id="m-mgmt" type="text" value="'+(t.mgmt||'')+'">')+'</div>'
       +'<div><div class="field-label">Publieke omroepen</div>'+omroepPickerHTML(t.omroepen||[])+'</div>'
+      +programmasSection(t.programmas||[])
       +socialSection(t.ig_url,t.ig_followers,t.tt_url,t.tt_followers,t.yt_url,t.yt_followers)
       +'<div><div class="field-label">Notities</div><textarea id="m-notes" rows="3">'+(t.notes||'')+'</textarea></div>'
       +'<div class="btn-row"><button class="btn-primary" onclick="updateTalent()">Opslaan</button><button class="btn-danger" onclick="removeTalent()">Verwijderen</button><button onclick="closeModal()">Annuleren</button></div>';
@@ -623,7 +635,7 @@ function openModal(mode,id){
 
 function renderGenreModal(){
   document.getElementById('modal-inner').innerHTML='<div class="modal-header"><span class="modal-title">GENRES</span>'+xBtn()+'</div>'
-    +'<div><div class="field-label" style="margin-bottom:8px">Bestaande genres</div><div class="chips">'+genres.map(g=>'<div class="chip">'+g+'<button onclick="removeGenre(\''+g+'\')">×</button></div>').join('')+'</div></div>'
+    +'<div><div class="field-label" style="margin-bottom:8px">Bestaande genres</div><div class="chips">'+genres.map(g=>'<div class="chip">'+g+'<button onclick="removeGenre(\''+g+'\')">&times;</button></div>').join('')+'</div></div>'
     +'<div class="divider"></div>'
     +'<div><div class="field-label">Nieuw genre</div><div class="url-row" style="margin-top:5px"><input type="text" id="new-genre" placeholder="bijv. Koken" onkeydown="if(event.key===\'Enter\')addGenre()"><button class="btn-primary" onclick="addGenre()">+ Toevoegen</button></div></div>'
     +'<button onclick="closeModal()">Klaar</button>';
@@ -636,15 +648,28 @@ function handleOverlayClick(e){if(e.target===document.getElementById('overlay'))
 async function addTalent(){
   const naam=(document.getElementById('m-naam')||{}).value.trim();
   if(!naam){showToast('Vul een naam in');return;}
-  const ok=await saveTalentDB(Object.assign({naam,categorieen:getPickerVals('cat-picker'),genres:getPickerVals('genre-picker'),mgmt:(document.getElementById('m-mgmt')||{}).value||'',notes:(document.getElementById('m-notes')||{}).value||'',expertise:(document.getElementById('m-expertise')||{}).value||'',gender:getGender(),omroepen:getOmroepen(),foto_url:getFoto('')},getSocials()));
-  if(ok){closeModal();await loadTalents();showToast('Talent toegevoegd!');}
+  // Duplicaatcheck
+  const dupl=talents.find(t=>t.naam.toLowerCase().trim()===naam.toLowerCase().trim());
+  if(dupl){
+    if(!confirm('Let op: "'+naam+'" staat al in de database. Toch toevoegen?'))return;
+  }
+  const ok=await saveTalentDB(Object.assign({naam,categorieen:getPickerVals('cat-picker'),genres:getPickerVals('genre-picker'),mgmt:(document.getElementById('m-mgmt')||{}).value||'',notes:(document.getElementById('m-notes')||{}).value||'',expertise:(document.getElementById('m-expertise')||{}).value||'',gender:getGender(),omroepen:getOmroepen(),programmas:getProgrammas(),foto_url:getFoto('')},getSocials()));
+  if(ok){
+    const ps=getProgrammasInput();
+    for(const p of ps){if(!programmas.includes(p)){await saveProgrammaDB(p);programmas.push(p);}}
+    closeModal();await loadAll();showToast('Talent toegevoegd!');
+  }
 }
 async function updateTalent(){
   const naam=(document.getElementById('m-naam')||{}).value.trim();
   if(!naam){showToast('Vul een naam in');return;}
   const t=talents.find(x=>x.id===activeId);
-  const ok=await saveTalentDB(Object.assign({id:activeId,naam,categorieen:getPickerVals('cat-picker'),genres:getPickerVals('genre-picker'),mgmt:(document.getElementById('m-mgmt')||{}).value||'',notes:(document.getElementById('m-notes')||{}).value||'',expertise:(document.getElementById('m-expertise')||{}).value||'',gender:getGender(),omroepen:getOmroepen(),foto_url:getFoto(t.foto_url||'')},getSocials()));
-  if(ok){closeModal();await loadTalents();showToast('Opgeslagen!');}
+  const ok=await saveTalentDB(Object.assign({id:activeId,naam,categorieen:getPickerVals('cat-picker'),genres:getPickerVals('genre-picker'),mgmt:(document.getElementById('m-mgmt')||{}).value||'',notes:(document.getElementById('m-notes')||{}).value||'',expertise:(document.getElementById('m-expertise')||{}).value||'',gender:getGender(),omroepen:getOmroepen(),programmas:getProgrammasInput(),foto_url:getFoto(t.foto_url||'')},getSocials()));
+  if(ok){
+    const ps=getProgrammasInput();
+    for(const p of ps){if(!programmas.includes(p)){await saveProgrammaDB(p);programmas.push(p);}}
+    closeModal();await loadTalents();showToast('Opgeslagen!');
+  }
 }
 async function removeTalent(){if(!confirm('Talent verwijderen?'))return;const ok=await deleteTalentDB(activeId);if(ok){closeModal();await loadTalents();showToast('Verwijderd');}}
 async function createProject(){
@@ -741,6 +766,61 @@ async function handleCSV(e){
   for(const cols of parsed){const naam=(cols[naamIdx]||'').trim();if(!naam)continue;const {error}=await db.from('talents').insert({naam,categorieen:[],genres:[],omroepen:[]});if(!error)ok++;}
   await loadTalents();showToast(ok+' talenten geïmporteerd!');
 }
+
+// ── PROGRAMMAS ───────────────────────────────────────────────────────
+function programmasSection(selected){
+  selected=selected||[];
+  var tagsHTML=selected.map(function(p){
+    return '<span data-naam="'+p+'" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:99px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);">'+p+'<button type="button" onclick="removeProgrammaTag(this)" style="background:none;border:none;color:var(--text3);padding:0;cursor:pointer;font-size:13px;line-height:1;">x</button></span>';
+  }).join('');
+  return '<div><div class="field-label">Meegedaan aan</div>'
+    +'<div id="programma-tags" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">'+tagsHTML+'</div>'
+    +'<div style="position:relative;">'
+    +'<input type="text" id="programma-input" placeholder="Zoek of typ programmanaam..." autocomplete="off" oninput="onProgrammaInput(this)">'
+    +'<div id="programma-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);z-index:50;max-height:160px;overflow-y:auto;"></div>'
+    +'</div></div>';
+}
+
+function onProgrammaInput(input){
+  const q=input.value.trim().toLowerCase();
+  const sug=document.getElementById('programma-suggestions');
+  if(!q){sug.style.display='none';return;}
+  const matches=programmas.filter(p=>p.toLowerCase().includes(q)&&!getProgrammasInput().includes(p));
+  if(!matches.length&&q.length<2){sug.style.display='none';return;}
+  var html=matches.map(p=>'<div onclick="addProgrammaTag(''+p+'')" style="padding:7px 10px;font-size:12px;cursor:pointer;color:var(--text);" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">'+p+'</div>').join('');
+  if(q&&!programmas.find(p=>p.toLowerCase()===q)){html+='<div onclick="addProgrammaTag(''+input.value.trim()+'')" style="padding:7px 10px;font-size:12px;cursor:pointer;color:var(--accent);">+ "'+input.value.trim()+'" toevoegen</div>';}
+  sug.innerHTML=html;sug.style.display='block';
+}
+
+function addProgrammaTag(naam){
+  if(!naam.trim())return;
+  const existing=getProgrammasInput();
+  if(existing.includes(naam))return;
+  const container=document.getElementById('programma-tags');
+  const span=document.createElement('span');
+  span.style.cssText='display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;border-radius:99px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);';
+  span.dataset.naam=naam;
+  span.innerHTML=naam+'<button type="button" onclick="removeProgrammaTag(this)" style="background:none;border:none;color:var(--text3);padding:0;cursor:pointer;font-size:13px;line-height:1;">&times;</button>';
+  container.appendChild(span);
+  const input=document.getElementById('programma-input');
+  if(input)input.value='';
+  document.getElementById('programma-suggestions').style.display='none';
+  if(!programmas.includes(naam))programmas.push(naam);
+}
+
+function removeProgrammaTag(btn){btn.parentElement.remove();}
+
+function getProgrammasInput(){
+  return Array.from(document.querySelectorAll('#programma-tags span[data-naam]')).map(s=>s.dataset.naam);
+}
+function getProgrammas(){return getProgrammasInput();}
+
+// Close suggestions on outside click
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#programma-input')&&!e.target.closest('#programma-suggestions')){
+    var s=document.getElementById('programma-suggestions');if(s)s.style.display='none';
+  }
+});
 
 // ── SORT / FILTER ─────────────────────────────────────────────────────
 function setSort(v){sortMode=v;renderGrid();}
