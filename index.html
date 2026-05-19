@@ -285,7 +285,16 @@ function tGenres(t){return Array.isArray(t.genres)&&t.genres.length?t.genres:(t.
 function tCats(t){return Array.isArray(t.categorieen)&&t.categorieen.length?t.categorieen:(t.categorie?[t.categorie]:[]);}
 
 // ── DATABASE ──────────────────────────────────────────────────────────
-async function loadAll(){await Promise.all([loadGenres(),loadTalents(),loadProjecten(),loadProgrammas()]);}
+async function loadAll(){
+  try{
+    await loadTalents();
+  }catch(e){
+    document.getElementById('grid').innerHTML='<div class="empty">Fout bij laden talenten: '+e.message+'</div>';
+  }
+  try{await loadGenres();}catch(e){console.warn('genres:',e);}
+  try{await loadProjecten();}catch(e){console.warn('projecten:',e);}
+  try{await loadProgrammas();}catch(e){console.warn('programmas:',e);}
+}
 
 async function loadProgrammas(){
   try{
