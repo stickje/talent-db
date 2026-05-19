@@ -288,13 +288,17 @@ function tCats(t){return Array.isArray(t.categorieen)&&t.categorieen.length?t.ca
 async function loadAll(){await Promise.all([loadGenres(),loadTalents(),loadProjecten(),loadProgrammas()]);}
 
 async function loadProgrammas(){
-  const {data}=await db.from('programmas').select('naam').order('naam');
-  programmas=(data||[]).map(p=>p.naam);
+  try{
+    const {data}=await db.from('programmas').select('naam').order('naam');
+    programmas=(data||[]).map(p=>p.naam);
+  }catch(e){programmas=[];}
 }
 
 async function saveProgrammaDB(naam){
-  const {error}=await db.from('programmas').upsert({naam},{onConflict:'naam',ignoreDuplicates:true});
-  return !error;
+  try{
+    await db.from('programmas').upsert({naam},{onConflict:'naam'});
+    return true;
+  }catch(e){return false;}
 }
 
 async function loadTalents(){
