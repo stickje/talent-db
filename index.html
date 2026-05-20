@@ -94,8 +94,8 @@ button:hover{border-color:var(--text2);}
 .card-social-link:hover{color:var(--accent);border-color:var(--accent);}
 .card-omroepen{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
 .omroep-tag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;}
-.omroep-RTL{background:linear-gradient(90deg,#FF6600 0%,#FF6600 33.3%,#E60000 33.3%,#E60000 66.6%,#FFD700 66.6%,#FFD700 100%);color:#ffffff;border-color:transparent;}
-.omroep-TALPA{background:linear-gradient(90deg,#1a1a6e 0%,#8b1a4a 45%,#c0392b 70%,#d4748a 100%);color:#ffffff;border-color:transparent;}
+.omroep-RTL{background:linear-gradient(90deg,#ffa000 0%,#ffa000 33.3%,#ff7e00 33.3%,#ff7e00 66.6%,#ff4b00 66.6%,#ff4b00 100%);color:#ffffff;border:none;outline:none;}
+.omroep-TALPA{background:linear-gradient(90deg,#1a1a6e 0%,#8b1a4a 45%,#c0392b 70%,#d4748a 100%);color:#ffffff;border:none;outline:none;}
 .omroep-ZIGGO{background:#F38C00;color:#ffffff;border-color:#000000;}
 .omroep-ESPN{background:#E52534;color:#ffffff;border-color:#E52534;}
 .empty{grid-column:1/-1;text-align:center;padding:5rem;color:var(--text3);font-size:14px;}
@@ -271,7 +271,7 @@ const OMROEPEN=[
   {id:'NTR',label:'NTR',bg:'#00C389',color:'#000000',border:'#00C389'},
   {id:'ZWART',label:'Omroep ZWART',bg:'#000000',color:'#FFE600',border:'#000000'},
   {id:'_SEP',label:'',bg:'',color:'',border:''},
-  {id:'RTL',label:'RTL',bg:'rtl',color:'#ffffff',border:'transparent'},
+  {id:'RTL',label:'RTL',bg:'rtl',color:'#ffffff',border:'0'},
   {id:'TALPA',label:'Talpa',bg:'linear-gradient(90deg,#1a1a6e 0%,#8b1a4a 45%,#c0392b 70%,#d4748a 100%)',color:'#ffffff',border:'transparent'},
   {id:'ZIGGO',label:'Ziggo',bg:'#F38C00',color:'#ffffff',border:'#000000'},
   {id:'ESPN',label:'ESPN',bg:'#E52534',color:'#ffffff',border:'#E52534'},
@@ -443,7 +443,7 @@ function renderOmroepFilters(){
     btn.className='pill'+(activeOmroep===o.id?' active':'');
     btn.textContent=o.label;
     if(activeOmroep===o.id){
-      var bg=o.bg==='rtl'?'linear-gradient(90deg,#FF6600 0%,#FF6600 33.3%,#E60000 33.3%,#E60000 66.6%,#FFD700 66.6%,#FFD700 100%)':o.bg;
+      var bg=o.bg==='rtl'?'linear-gradient(90deg,#ffa000 0%,#ffa000 33.3%,#ff7e00 33.3%,#ff7e00 66.6%,#ff4b00 66.6%,#ff4b00 100%)':o.bg;
       btn.style.background=bg;btn.style.color=o.color;btn.style.borderColor=o.border;
     }
     btn.onclick=function(){activeOmroep=o.id;renderOmroepFilters();renderGrid();};
@@ -573,7 +573,7 @@ function omroepPickerHTML(sel){
     if(o.id==='_SEP') return '<div style="width:1px;background:var(--border2);margin:0 4px;align-self:stretch;flex-shrink:0;"></div>';
     var selected=sel.includes(o.id);
     var st=selected?'background:'+o.bg+';color:'+o.color+';border-color:'+o.border+';opacity:1;':'';
-    if(o.bg==='rtl') st=selected?'background:linear-gradient(90deg,#FF6600 0%,#FF6600 33.3%,#E60000 33.3%,#E60000 66.6%,#FFD700 66.6%,#FFD700 100%);color:#fff;border-color:transparent;opacity:1;':'';
+    if(o.bg==='rtl') st=selected?'background:linear-gradient(90deg,#ffa000 0%,#ffa000 33.3%,#ff7e00 33.3%,#ff7e00 66.6%,#ff4b00 66.6%,#ff4b00 100%);color:#fff;border-color:transparent;opacity:1;':'';
     return '<button type="button" data-oid="'+o.id+'" class="omroep-btn omroep-'+o.id+(selected?' selected':'')+'" style="'+st+'" onclick="toggleOmroep(this)">'+o.label+'</button>';
   }).join('')+'</div>';
 }
@@ -583,8 +583,8 @@ function toggleOmroep(btn){
   var o=OMROEPEN.find(function(x){return x.id===btn.dataset.oid;});
   if(!o)return;
   if(btn.classList.contains('selected')){
-    var bg=o.bg==='rtl'?'linear-gradient(90deg,#FF6600 0%,#FF6600 33.3%,#E60000 33.3%,#E60000 66.6%,#FFD700 66.6%,#FFD700 100%)':o.bg;
-    btn.style.background=bg;btn.style.color=o.color;btn.style.borderColor=o.border;btn.style.opacity='1';
+    var bg=o.bg==='rtl'?'linear-gradient(90deg,#ffa000 0%,#ffa000 33.3%,#ff7e00 33.3%,#ff7e00 66.6%,#ff4b00 66.6%,#ff4b00 100%)':o.bg;
+    btn.style.background=bg;if(o.border==='0'||o.border==='none'){btn.style.border='none';}else{btn.style.borderColor=o.border;}btn.style.color=o.color;btn.style.opacity='1';
   } else {
     btn.style.background='';btn.style.color='';btn.style.borderColor='';btn.style.opacity='';
   }
