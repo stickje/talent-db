@@ -124,9 +124,10 @@ button:hover{border-color:var(--text2);}
 .cat-pick-btn.selected.ce{background:rgba(255,179,71,0.12);color:var(--cat-e);border-color:rgba(255,179,71,0.35);font-weight:500;}
 .omroep-picker{display:flex;flex-wrap:wrap;gap:5px;}
 .omroep-btn{font-size:11px;padding:4px 10px;border-radius:5px;cursor:pointer;font-family:var(--font-body);font-weight:600;border:2px solid transparent;opacity:0.45;transition:opacity 0.15s;}
-.omroep-RTL,.omroep-TALPA{border:none!important;outline:none!important;padding:6px 10px;}
+.omroep-RTL,.omroep-TALPA{border:0!important;outline:0!important;padding:4px 10px;opacity:0.85!important;box-shadow:none!important;}
 .omroep-btn:hover{opacity:0.75;}
 .omroep-btn.selected{opacity:1;}
+.omroep-RTL.selected,.omroep-TALPA.selected{opacity:1!important;border:0!important;}
 .social-row{display:flex;gap:7px;flex-wrap:wrap;}
 .social-block{flex:1;min-width:140px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;display:flex;flex-direction:column;gap:5px;}
 .social-block-header{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
@@ -585,9 +586,9 @@ function toggleOmroep(btn){
   if(!o)return;
   if(btn.classList.contains('selected')){
     var bg=o.bg==='rtl'?'linear-gradient(90deg,#ffa000 0%,#ffa000 33.3%,#ff7e00 33.3%,#ff7e00 66.6%,#ff4b00 66.6%,#ff4b00 100%)':o.bg;
-    btn.style.background=bg;if(o.border==='0'||o.border==='none'){btn.style.border='none';}else{btn.style.borderColor=o.border;}btn.style.color=o.color;btn.style.opacity='1';
+    btn.style.background=bg;if(o.id==='RTL'||o.id==='TALPA'){btn.style.border='none';btn.style.outline='none';btn.style.boxShadow='none';}else if(o.border==='0'||o.border==='none'){btn.style.border='none';}else{btn.style.borderColor=o.border;}btn.style.color=o.color;btn.style.opacity='1';
   } else {
-    btn.style.background='';btn.style.color='';btn.style.borderColor='';btn.style.opacity='';
+    btn.style.background='';btn.style.color='';btn.style.border='';btn.style.borderColor='';btn.style.opacity='';btn.style.boxShadow='';
   }
 }
 function getOmroepen(){return Array.from(document.querySelectorAll('#omroep-picker button.selected')).map(b=>b.dataset.oid).filter(function(id){return id&&id!=='_SEP';});}
