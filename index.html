@@ -94,8 +94,8 @@ button:hover{border-color:var(--text2);}
 .card-social-link:hover{color:var(--accent);border-color:var(--accent);}
 .card-omroepen{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
 .omroep-tag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;}
-.omroep-RTL{background:linear-gradient(90deg,#ffa000 0%,#ffa000 33.3%,#ff7e00 33.3%,#ff7e00 66.6%,#ff4b00 66.6%,#ff4b00 100%);color:#ffffff;border:none;outline:none;}
-.omroep-TALPA{background:linear-gradient(90deg,#1a1a6e 0%,#8b1a4a 45%,#c0392b 70%,#d4748a 100%);color:#ffffff;border:none;outline:none;}
+.omroep-RTL{background:linear-gradient(90deg,#ffa000 0% 33.33%,#ff7e00 33.33% 66.66%,#ff4b00 66.66% 100%)!important;color:#ffffff!important;border:none!important;outline:none!important;opacity:0.85!important;}
+.omroep-TALPA{background:linear-gradient(90deg,#1a1a6e 0%,#8b1a4a 45%,#c0392b 70%,#d4748a 100%)!important;color:#ffffff!important;border:none!important;outline:none!important;opacity:0.85!important;}
 .omroep-ZIGGO{background:#F38C00;color:#ffffff;border-color:#000000;}
 .omroep-ESPN{background:#E52534;color:#ffffff;border-color:#E52534;}
 .empty{grid-column:1/-1;text-align:center;padding:5rem;color:var(--text3);font-size:14px;}
@@ -124,25 +124,13 @@ button:hover{border-color:var(--text2);}
 .cat-pick-btn.selected.ce{background:rgba(255,179,71,0.12);color:var(--cat-e);border-color:rgba(255,179,71,0.35);font-weight:500;}
 .omroep-picker{display:flex;flex-wrap:wrap;gap:5px;}
 .omroep-btn{font-size:11px;padding:4px 10px;border-radius:5px;cursor:pointer;font-family:var(--font-body);font-weight:600;border:2px solid transparent;opacity:0.45;transition:opacity 0.15s;}
-.omroep-RTL{
-  all:unset;
-  font-size:11px;padding:4px 10px;border-radius:5px;cursor:pointer;
-  font-family:var(--font-body);font-weight:600;
-  background:linear-gradient(90deg,#ffa000 0%,#ffa000 33.3%,#ff7e00 33.3%,#ff7e00 66.6%,#ff4b00 66.6%,#ff4b00 100%);
-  color:#ffffff;opacity:0.85;transition:opacity 0.15s;display:inline-block;
-}
-.omroep-RTL:hover,.omroep-RTL.selected{opacity:1!important;}
-.omroep-TALPA{
-  all:unset;
-  font-size:11px;padding:4px 10px;border-radius:5px;cursor:pointer;
-  font-family:var(--font-body);font-weight:600;
-  background:linear-gradient(90deg,#1a1a6e 0%,#8b1a4a 45%,#c0392b 70%,#d4748a 100%);
-  color:#ffffff;opacity:0.85;transition:opacity 0.15s;display:inline-block;
-}
-.omroep-TALPA:hover,.omroep-TALPA.selected{opacity:1!important;}
+
+
+
+
 .omroep-btn:hover{opacity:0.75;}
 .omroep-btn.selected{opacity:1;}
-.omroep-RTL.selected,.omroep-TALPA.selected{opacity:1!important;border:0!important;}
+
 .social-row{display:flex;gap:7px;flex-wrap:wrap;}
 .social-block{flex:1;min-width:140px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius);padding:8px;display:flex;flex-direction:column;gap:5px;}
 .social-block-header{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
@@ -592,7 +580,7 @@ function omroepPickerHTML(sel){
     if(o.id==='RTL'||o.id==='TALPA'){
       var bg=o.id==='RTL'?'linear-gradient(90deg,#ffa000 0% 33.33%,#ff7e00 33.33% 66.66%,#ff4b00 66.66% 100%)':'linear-gradient(90deg,#1a1a6e 0%,#8b1a4a 45%,#c0392b 70%,#d4748a 100%)';
       var opacity=selected?'1':'0.5';
-      return '<div data-oid="'+o.id+'" role="button" class="omroep-btn'+(selected?' selected':'')+'" style="background:'+bg+';color:#fff;border:none;outline:none;opacity:'+opacity+';border-radius:5px;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;font-family:var(--font-body);display:inline-block;" onclick="toggleOmroep(this)">'+o.label+'</div>';
+      return '<div data-oid="'+o.id+'" role="button" class="omroep-'+o.id+(selected?' selected':'')+'" style="background:'+bg+';color:#fff;border:none!important;outline:none!important;opacity:'+opacity+';border-radius:5px;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;font-family:var(--font-body);display:inline-block;" onclick="toggleOmroep(this)">'+o.label+'</div>';
     }
     var st=selected?'background:'+o.bg+';color:'+o.color+';border-color:'+o.border+';opacity:1;':'';
     return '<button type="button" data-oid="'+o.id+'" class="omroep-btn omroep-'+o.id+(selected?' selected':'')+'" style="'+st+'" onclick="toggleOmroep(this)">'+o.label+'</button>';
