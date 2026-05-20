@@ -94,10 +94,10 @@ button:hover{border-color:var(--text2);}
 .card-social-link:hover{color:var(--accent);border-color:var(--accent);}
 .card-omroepen{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;}
 .omroep-tag{font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;}
-.omroep-RTL{background:linear-gradient(90deg,#ffa000 0% 33.33%,#ff7e00 33.33% 66.66%,#ff4b00 66.66% 100%)!important;color:#ffffff!important;border:none!important;outline:none!important;opacity:0.85!important;}
-.omroep-TALPA{background:linear-gradient(90deg,#1a1a6e 0%,#8b1a4a 45%,#c0392b 70%,#d4748a 100%)!important;color:#ffffff!important;border:none!important;outline:none!important;opacity:0.85!important;}
-.omroep-ZIGGO{background:#F38C00;color:#ffffff;border-color:#000000;}
-.omroep-ESPN{background:#E52534;color:#ffffff;border-color:#E52534;}
+
+
+
+
 .empty{grid-column:1/-1;text-align:center;padding:5rem;color:var(--text3);font-size:14px;}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:100;align-items:center;justify-content:center;padding:1rem;}
 .overlay.open{display:flex;}
@@ -276,8 +276,8 @@ const OMROEPEN=[
   {id:'NTR',label:'NTR',bg:'#00C389',color:'#000000',border:'#00C389'},
   {id:'ZWART',label:'Omroep ZWART',bg:'#000000',color:'#FFE600',border:'#000000'},
   {id:'_SEP',label:'',bg:'',color:'',border:''},
-  {id:'RTL',label:'RTL',bg:'rtl',color:'#ffffff',border:'0'},
-  {id:'TALPA',label:'Talpa',bg:'linear-gradient(90deg,#1a1a6e 0%,#8b1a4a 45%,#c0392b 70%,#d4748a 100%)',color:'#ffffff',border:'transparent'},
+  {id:'RTL',label:'RTL',bg:'#cc5500',color:'#ffffff',border:'#cc5500'},
+  {id:'TALPA',label:'Talpa',bg:'#6b1a8a',color:'#ffffff',border:'#6b1a8a'},
   {id:'ZIGGO',label:'Ziggo',bg:'#F38C00',color:'#ffffff',border:'#000000'},
   {id:'ESPN',label:'ESPN',bg:'#E52534',color:'#ffffff',border:'#E52534'},
 ];
@@ -438,12 +438,7 @@ function renderOmroepFilters(){
   allBtn.onclick=function(){activeOmroep='alle';renderOmroepFilters();renderGrid();};
   el.appendChild(allBtn);
   OMROEPEN.forEach(function(o){
-    if(o.id==='_SEP'){
-      var sep=document.createElement('div');
-      sep.style.cssText='width:1px;background:var(--border2);margin:0 2px;height:20px;align-self:center;flex-shrink:0;';
-      el.appendChild(sep);
-      return;
-    }
+
     var btn=document.createElement('button');
     btn.className='pill'+(activeOmroep===o.id?' active':'');
     btn.textContent=o.label;
@@ -575,20 +570,13 @@ function getGender(){return _selectedGender;}
 function omroepPickerHTML(sel){
   sel=sel||[];
   return '<div class="omroep-picker" id="omroep-picker">'+OMROEPEN.map(function(o){
-    if(o.id==='_SEP') return '<div style="width:1px;background:var(--border2);margin:0 4px;align-self:stretch;flex-shrink:0;"></div>';
     var selected=sel.includes(o.id);
-    if(o.id==='RTL'||o.id==='TALPA'){
-      var bgFull=o.id==='RTL'?'linear-gradient(90deg,#ffa000 0% 33.33%,#ff7e00 33.33% 66.66%,#ff4b00 66.66% 100%)':'linear-gradient(90deg,#1a1a6e 0%,#8b1a4a 45%,#c0392b 70%,#d4748a 100%)';
-      var bgDim=o.id==='RTL'?'linear-gradient(90deg,#7a5000 0% 33.33%,#7a4000 33.33% 66.66%,#7a2500 66.66% 100%)':'linear-gradient(90deg,#0d0d37 0%,#450d25 45%,#5e1b15 70%,#6a3a42 100%)';
-      var bg=selected?bgFull:bgDim;
-      return '<div data-oid="'+o.id+'" role="button" class="omroep-'+o.id+(selected?' selected':'')+'" style="background:'+bg+';color:#fff;border:none!important;outline:none!important;border-radius:5px;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;font-family:var(--font-body);display:inline-block;" onclick="toggleOmroep(this)">'+o.label+'</div>';
-    }
+
     var st=selected?'background:'+o.bg+';color:'+o.color+';border-color:'+o.border+';opacity:1;':'';
     return '<button type="button" data-oid="'+o.id+'" class="omroep-btn omroep-'+o.id+(selected?' selected':'')+'" style="'+st+'" onclick="toggleOmroep(this)">'+o.label+'</button>';
   }).join('')+'</div>';
 }
 function toggleOmroep(btn){
-  if(!btn.dataset.oid||btn.dataset.oid==='_SEP')return;
   btn.classList.toggle('selected');
   var o=OMROEPEN.find(function(x){return x.id===btn.dataset.oid;});
   if(!o)return;
