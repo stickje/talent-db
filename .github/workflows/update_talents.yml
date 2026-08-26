@@ -1,0 +1,28 @@
+name: Wekelijkse talent update
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Elke maandag om 9:00 's ochtends
+  workflow_dispatch:       # Ook handmatig te starten via GitHub
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code ophalen
+        uses: actions/checkout@v4
+
+      - name: Python instellen
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Benodigde packages installeren
+        run: pip install requests beautifulsoup4
+
+      - name: Script uitvoeren
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python update_talents.py
