@@ -1,6 +1,6 @@
 import os
+import csv
 import requests
-from bs4 import BeautifulSoup
 
 # ── CONFIG ────────────────────────────────────────────────────────────
 SUPABASE_URL = os.environ["SUPABASE_URL"]
@@ -13,68 +13,66 @@ HEADERS = {
     "Prefer": "return=minimal"
 }
 
-# ── STAP 1: Haal bestaande namen op uit Supabase ──────────────────────
+CSV_FILE = "nieuwe_talenten.csv"  # Zet dit bestand in de root van je repo
+
+# ── Haal bestaande namen op uit Supabase ──────────────────────────────
 def get_existing_names():
     res = requests.get(
-        f"{SUPABASE_URL}/rest/v1/talents?select=naam",
+        f"{SUPABASE_URL}/rest/v1/talents?select=naam&limit=10000",
         headers=HEADERS
     )
     data = res.json()
     return {t["naam"].lower().strip() for t in data}
 
-# ── STAP 2: Scrape Best Social 100 ───────────────────────────────────
-def scrape_best_social_100():
-    try:
-        res = requests.get(
-            "https://thebestsocialawards.nl/top100/resultaten",
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=15
-        )
-        soup = BeautifulSoup(res.text, "html.parser")
-        names = []
-        for tag in soup.find_all("h4"):
-            name = tag.get_text(strip=True)
-            if name and len(name) > 2:
-                names.append(name)
-        return names
-    except Exception as e:
-        print(f"Best Social 100 fout: {e}")
+# ── Lees CSV ──────────────────────────────────────────────────────────
+def read_csv():
+    if not os.path.exists(CSV_FILE):
+        print(f"⚠️  {CSV_FILE} niet gevonden in repo — niets te importeren.")
         return []
 
-# ── STAP 3: Scrape Influencer100 ──────────────────────────────────────
-def scrape_influencer100():
-    try:
-        res = requests.get(
-            "https://m100.nl/influencer100-2026/",
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=15
-        )
-        soup = BeautifulSoup(res.text, "html.parser")
-        names = []
-        for tag in soup.find_all(["h2", "h3", "h4"]):
-            name = tag.get_text(strip=True)
-            if name and len(name) > 2 and not name.startswith("#"):
-                names.append(name)
-        return names
-    except Exception as e:
-        print(f"Influencer100 fout: {e}")
-        return []
+    talents = []
+    with open(CSV_FILE, encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        headers = [h.lower() for h in reader.fieldnames]
 
-# ── STAP 4: Voeg nieuwe talenten toe aan Supabase ─────────────────────
-def add_talent(naam):
-    payload = {
-        "naam": naam,
-        "categorie": "Deelnemer",
-        "categorieen": ["Deelnemer"],
-        "genre": "Entertainment",
-        "genres": ["Entertainment"],
-        "omroepen": [],
-        "programmas": []
-    }
+        for row in reader:
+            # Normaliseer kolomnamen
+            row_lower = {k.lower(): v for k, v in row.items()}
+
+            naam = row_lower.get("naam", "").strip()
+            if not naam:
+                continue
+
+            categorie = row_lower.get("categorie", "Deelnemer").strip() or "Deelnemer"
+
+            genres_raw = row_lower.get("genres", row_lower.get("genre", "Entertainment"))
+            genres = [g.strip() for g in genres_raw.split(",") if g.strip()]
+            if not genres:
+                genres = ["Entertainment"]
+
+            ig_url = row_lower.get("instagram url", row_lower.get("instagram_url", "")).strip()
+            tt_url = row_lower.get("tiktok url", row_lower.get("tiktok_url", "")).strip()
+
+            talents.append({
+                "naam": naam,
+                "categorie": categorie,
+                "categorieen": [categorie],
+                "genre": genres[0],
+                "genres": genres,
+                "instagram_url": ig_url,
+                "tiktok_url": tt_url,
+                "omroepen": [],
+                "programmas": []
+            })
+
+    return talents
+
+# ── Voeg talent toe aan Supabase ──────────────────────────────────────
+def add_talent(talent):
     res = requests.post(
         f"{SUPABASE_URL}/rest/v1/talents",
         headers=HEADERS,
-        json=payload
+        json=talent
     )
     return res.status_code in [200, 201]
 
@@ -82,34 +80,27 @@ def add_talent(naam):
 def main():
     print("🔍 Bestaande talenten ophalen...")
     existing = get_existing_names()
-    print(f"   {len(existing)} talenten gevonden in database")
+    print(f"   {len(existing)} talenten in database")
 
-    print("\n📋 Lijsten scrapen...")
-    all_names = set()
-    all_names.update(scrape_best_social_100())
-    all_names.update(scrape_influencer100())
-    print(f"   {len(all_names)} namen gevonden op lijsten")
+    print(f"\n📂 {CSV_FILE} inlezen...")
+    talents = read_csv()
+    print(f"   {len(talents)} rijen gevonden in CSV")
 
-    new_names = [
-        n for n in all_names
-        if n.lower().strip() not in existing and len(n) > 2
-    ]
-    print(f"\n✨ {len(new_names)} nieuwe talenten gevonden")
+    new_talents = [t for t in talents if t["naam"].lower().strip() not in existing]
+    print(f"\n✨ {len(new_talents)} nieuwe talenten (nog niet in database)")
 
     added = []
-    for naam in new_names:
-        ok = add_talent(naam)
+    skipped = []
+    for t in new_talents:
+        ok = add_talent(t)
         if ok:
-            added.append(naam)
-            print(f"   ✓ Toegevoegd: {naam}")
+            added.append(t["naam"])
+            print(f"   ✓ {t['naam']}")
         else:
-            print(f"   ✗ Mislukt: {naam}")
+            skipped.append(t["naam"])
+            print(f"   ✗ Mislukt: {t['naam']}")
 
-    print(f"\n✅ Klaar! {len(added)} talenten toegevoegd.")
-    if added:
-        print("\nNieuwe talenten:")
-        for n in added:
-            print(f"  - {n}")
+    print(f"\n✅ Klaar! {len(added)} toegevoegd, {len(skipped)} mislukt.")
 
 if __name__ == "__main__":
     main()
